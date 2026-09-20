@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#121212">
+  <title>極簡手繪分鏡本</title>
+  <style>
+    :root {
+      --bg-color: #121212;
+      --card-bg: #1e1e1e;
+      --text-color: #e0e0e0;
+      --accent-color: #4da6ff;
+      --danger-color: #ff5252;
+      --border-color: #333333;
+      --input-bg: #2a2a2a;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 12px;
+      max-width: 680px;
+      margin: 0 auto;
+      padding-bottom: 60px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+      padding-top: 8px;
+    }
+
+    h1 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+
+    .top-toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+      justify-content: center;
+    }
+
+    button {
+      background-color: var(--card-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      touch-action: manipulation;
+    }
+
+    button:active {
+      opacity: 0.7;
+      transform: scale(0.98);
+    }
+
+    button.primary {
+      background-color: var(--accent-color);
+      color: #000;
+      border: none;
+    }
+
+    button.danger {
+      color: var(--danger-color);
+      border-color: var(--danger-color);
+    }
+
+    .storyboard-list {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    .frame-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .frame-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1rem;
+      color: var(--accent-color);
+    }
+
+    .canvas-container {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background-color: #ffffff;
+      border-radius: 6px;
+      overflow: hidden;
+      touch-action: none;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      touch-action: none;
+    }
+
+    .draw-tools {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .tool-btn {
+      flex: 1;
+      justify-content: center;
+      padding: 6px 8px;
+      font-size: 0.85rem;
+    }
+
+    .tool-btn.active {
+      background-color: var(--accent-color);
+      color: #000;
+      border-color: var(--accent-color);
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: #aaa;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      background-color: var(--input-bg);
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 8px;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      font-family: inherit;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent-color);
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 50px;
+    }
+
+    .bottom-actions {
+      margin-top: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .add-btn {
+      width: 100%;
+      padding: 14px;
+      font-size: 1.1rem;
+      justify-content: center;
+      background-color: var(--accent-color);
+      color: #000;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+    }
+
+    #file-input {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>🎬 我的極簡手繪分鏡本</h1>
+  </header>
+
+  <div class="top-toolbar">
+    <button onclick="exportJSON()">💾 匯出分鏡檔</button>
+    <button onclick="document.getElementById('file-input').click()">📂 載入分鏡檔</button>
+    <button onclick="exportAllImages()">🖼️ 匯出全部圖片</button>
+    <button class="danger" onclick="clearAll()">🗑️ 全部清空</button>
+    <input type="file" id="file-input" accept=".json" onchange="importJSON(event)">
+  </div>
+
+  <div id="storyboard-list" class="storyboard-list"></div>
+
+  <div class="bottom-actions">
+    <button class="add-btn" onclick="addFrameAndSave()">➕ 新增下一格分鏡</button>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'minimal_storyboard_data_v1';
+    let framesData = [];
+
+    // 初始化載入
+    window.addEventListener('DOMContentLoaded', () => {
+      loadFromStorage();
+      if (framesData.length === 0) {
+        addFrameData();
+        saveToStorage();
+      }
+      renderAllFrames();
+    });
+
+    function loadFromStorage() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          framesData = JSON.parse(saved);
+        }
+      } catch (e) {
+        console.error('Failed to load from localStorage', e);
+        framesData = [];
+      }
+    }
+
+    function saveToStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(framesData));
+      } catch (e) {
+        console.error('Failed to save to localStorage', e);
+      }
+    }
+
+    function addFrameData() {
+      framesData.push({
+        id: 'frame_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        drawing: '',
+        dialogue: '',
+        note: '',
+        script: ''
+      });
+    }
+
+    function addFrameAndSave() {
+      addFrameData();
+      saveToStorage();
+      renderAllFrames();
+      // 自動捲動到最下方新建立的分鏡
+      window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+    }
+
+    function deleteFrame(index) {
+      if (framesData.length <= 1) {
+        alert('至少需要保留一格分鏡！');
+        return;
+      }
+      if (confirm(`確定要刪除第 ${index + 1} 格分鏡嗎？`)) {
+        framesData.splice(index, 1);
+        saveToStorage();
+        renderAllFrames();
+      }
+    }
+
+    function clearAll() {
+      if (confirm('確定要清空全部分鏡嗎？此動作無法復原！')) {
+        framesData = [];
+        addFrameData();
+        saveToStorage();
+        renderAllFrames();
+      }
+    }
+
+    function renderAllFrames() {
+      const container = document.getElementById('storyboard-list');
+      container.innerHTML = '';
+
+      framesData.forEach((frame, index) => {
+        const card = document.createElement('div');
+        card.className = 'frame-card';
+
+        card.innerHTML = `
+          <div class="frame-header">
+            <span>分鏡格 ${index + 1}</span>
+            <button class="danger" style="padding: 2px 8px; font-size: 0.8rem;" onclick="deleteFrame(${index})">刪除此格</button>
+          </div>
+          <div class="canvas-container">
+            <canvas id="canvas_${frame.id}"></canvas>
+          </div>
+          <div class="draw-tools">
+            <button class="tool-btn active" id="btn_pen_${frame.id}" onclick="setTool('${frame.id}', 'pen')">✏️ 畫筆</button>
+            <button class="tool-btn" id="btn_eraser_${frame.id}" onclick="setTool('${frame.id}', 'eraser')">🧹 橡皮擦</button>
+            <button class="tool-btn danger" onclick="clearCanvas('${frame.id}')">清空畫布</button>
+          </div>
+          <div class="input-group">
+            <label>🗣️ 台詞</label>
+            <input type="text" placeholder="角色台詞／旁白……" value="${escapeHtml(frame.dialogue)}" oninput="updateText('${frame.id}', 'dialogue', this.value)">
+          </div>
+          <div class="input-group">
+            <label>📝 說明</label>
+            <input type="text" placeholder="鏡頭、運鏡、人物動作……" value="${escapeHtml(frame.note)}" oninput="updateText('${frame.id}', 'note', this.value)">
+          </div>
+          <div class="input-group">
+            <label>📄 文字稿</label>
+            <textarea placeholder="詳細腳本文字／備註……" oninput="updateText('${frame.id}', 'script', this.value)">${escapeHtml(frame.script)}</textarea>
+          </div>
+        `;
+
+        container.appendChild(card);
+
+        // 初始化 Canvas 畫布
+        setTimeout(() => {
+          initCanvas(frame);
+        }, 0);
+      });
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+    }
+
+    function updateText(id, key, value) {
+      const frame = framesData.find(f => f.id === id);
+      if (frame) {
+        frame[key] = value;
+        saveToStorage();
+      }
+    }
+
+    // Canvas 繪圖邏輯
+    const canvasStates = {};
+
+    function initCanvas(frame) {
+      const canvas = document.getElementById(`canvas_${frame.id}`);
+      if (!canvas) return;
+
+      const rect = canvas.parentElement.getBoundingClientRect();
+      canvas.width = rect.width * 2; // 高解析度
+      canvas.height = (rect.width * 9 / 16) * 2;
+
+      const ctx = canvas.getContext('2d');
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      canvasStates[frame.id] = {
+        ctx: ctx,
+        tool: 'pen',
+        isDrawing: false,
+        lastX: 0,
+        lastY: 0
+      };
+
+      // 載入已保存的繪圖
+      if (frame.drawing) {
+        const img = new Image();
+        img.onload = () => {
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        };
+        img.src = frame.drawing;
+      }
+
+      // Pointer Events 事件綁定
+      canvas.addEventListener('pointerdown', (e) => startDrawing(e, frame.id));
+      canvas.addEventListener('pointermove', (e) => draw(e, frame.id));
+      canvas.addEventListener('pointerup', () => stopDrawing(frame.id));
+      canvas.addEventListener('pointercancel', () => stopDrawing(frame.id));
+    }
+
+    function getPos(e, canvas) {
+      const rect = canvas.getBoundingClientRect();
+      const scaleX = canvas.width / rect.width;
+      const scaleY = canvas.height / rect.height;
+      return {
+        x: (e.clientX - rect.left) * scaleX,
+        y: (e.clientY - rect.top) * scaleY
+      };
+    }
+
+    function startDrawing(e, id) {
+      e.preventDefault();
+      const state = canvasStates[id];
+      const canvas = document.getElementById(`canvas_${id}`);
+      if (!state || !canvas) return;
+
+      state.isDrawing = true;
+      const pos = getPos(e, canvas);
+      state.lastX = pos.x;
+      state.lastY = pos.y;
+      canvas.setPointerCapture(e.pointerId);
+    }
+
+    function draw(e, id) {
+      const state = canvasStates[id];
+      if (!state || !state.isDrawing) return;
+      e.preventDefault();
+
+      const canvas = document.getElementById(`canvas_${id}`);
+      const pos = getPos(e, canvas);
+
+      state.ctx.beginPath();
+      state.ctx.moveTo(state.lastX, state.lastY);
+      state.ctx.lineTo(pos.x, pos.y);
+
+      if (state.tool === 'pen') {
+        state.ctx.globalCompositeOperation = 'source-over';
+        state.ctx.strokeStyle = '#000000';
+        state.ctx.lineWidth = 6;
+      } else {
+        state.ctx.globalCompositeOperation = 'destination-out';
+        state.ctx.lineWidth = 24;
+      }
+
+      state.ctx.stroke();
+      state.lastX = pos.x;
+      state.lastY = pos.y;
+    }
+
+    function stopDrawing(id) {
+      const state = canvasStates[id];
+      if (state && state.isDrawing) {
+        state.isDrawing = false;
+        // 保存繪圖至資料結構
+        const canvas = document.getElementById(`canvas_${id}`);
+        const frame = framesData.find(f => f.id === id);
+        if (canvas && frame) {
+          frame.drawing = canvas.toDataURL();
+          saveToStorage();
+        }
+      }
+    }
+
+    function setTool(id, tool) {
+      if (canvasStates[id]) {
+        canvasStates[id].tool = tool;
+        const btnPen = document.getElementById(`btn_pen_${id}`);
+        const btnEraser = document.getElementById(`btn_eraser_${id}`);
+        if (tool === 'pen') {
+          btnPen.classList.add('active');
+          btnEraser.classList.remove('active');
+        } else {
+          btnEraser.classList.add('active');
+          btnPen.classList.remove('active');
+        }
+      }
+    }
+
+    function clearCanvas(id) {
+      const state = canvasStates[id];
+      const canvas = document.getElementById(`canvas_${id}`);
+      if (state && canvas) {
+        state.ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const frame = framesData.find(f => f.id === id);
+        if (frame) {
+          frame.drawing = '';
+          saveToStorage();
+        }
+      }
+    }
+
+    // 匯出 / 載入 JSON
+    function exportJSON() {
+      const dateStr = new Date().toISOString().split('T')[0];
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(framesData, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `分鏡_${dateStr}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            framesData = imported;
+            saveToStorage();
+            renderAllFrames();
+            alert('分鏡檔載入成功！');
+          } else {
+            alert('檔案格式不正確！');
+          }
+        } catch (err) {
+          alert('解析檔案失敗，請確認是否為有效的 JSON 分鏡檔。');
+        }
+      };
+      reader.readAsText(file);
+      event.target.value = ''; // 重置 input
+    }
+
+    // 匯出圖卡 PNG（含畫布與文字內容）
+    function exportAllImages() {
+      if (framesData.length === 0) return;
+
+      framesData.forEach((frame, index) => {
+        const outCanvas = document.createElement('canvas');
+        outCanvas.width = 1280;
+        outCanvas.height = 1100;
+        const ctx = outCanvas.getContext('2d');
+
+        // 背景
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, outCanvas.width, outCanvas.height);
+
+        // 標題
+        ctx.fillStyle = '#000000';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText(`分鏡格 ${index + 1}`, 40, 60);
+
+        // 繪圖框 16:9
+        const imgWidth = 1200;
+        const imgHeight = 675;
+        const imgX = 40;
+        const imgY = 90;
+
+        ctx.strokeStyle = '#cccccc';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(imgX, imgY, imgWidth, imgHeight);
+
+        // 畫布內容
+        const srcCanvas = document.getElementById(`canvas_${frame.id}`);
+        if (srcCanvas) {
+          ctx.drawImage(srcCanvas, imgX, imgY, imgWidth, imgHeight);
+        }
+
+        // 文字資訊區域
+        let currentY = imgY + imgHeight + 50;
+        ctx.font = '24px sans-serif';
+
+        ctx.fillStyle = '#1a73e8';
+        ctx.fillText(`🗣️ 台詞：`, 40, currentY);
+        ctx.fillStyle = '#000000';
+        ctx.fillText(frame.dialogue || '（無）', 160, currentY);
+
+        currentY += 45;
+        ctx.fillStyle = '#1a73e8';
+        ctx.fillText(`📝 說明：`, 40, currentY);
+        ctx.fillStyle = '#000000';
+        ctx.fillText(frame.note || '（無）', 160, currentY);
+
+        currentY += 45;
+        ctx.fillStyle = '#1a73e8';
+        ctx.fillText(`📄 文字稿：`, 40, currentY);
+        ctx.fillStyle = '#333333';
+        
+        // 文字稿折行處理
+        const scriptText = frame.script || '（無）';
+        const lines = scriptText.split('\n');
+        let lineY = currentY;
+        lines.forEach(line => {
+          ctx.fillText(line, 160, lineY);
+          lineY += 32;
+        });
+
+        // 觸發下載
+        const link = document.createElement('a');
+        const padIndex = String(index + 1).padStart(2, '0');
+        link.download = `分鏡_格${padIndex}.png`;
+        link.href = outCanvas.toDataURL('image/png');
+        link.click();
+      });
+    }
+  </script>
+</body>
+</html>
